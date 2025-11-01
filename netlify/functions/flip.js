@@ -21,12 +21,8 @@ app.use(express.json());
 const SOLANA_RPC = "https://api.devnet.solana.com"; // Ganti ke mainnet-beta saat live
 const connection = new Connection(SOLANA_RPC, 'confirmed');
 
-// --- PERBAIKAN: HAPUS LOGIC WALLET DARI SINI ---
-// const relayerSecretKey = ... (DIHAPUS)
-// const relayerWallet = ... (DIHAPUS)
-
 // Alamat wallet bandar di-hardcode
-const houseWalletAddress = new PublicKey("hivWuGJHMnHNKAA5mqHxU5k1731XwQNbs8TKd22yLsT");
+const houseWalletAddress = new PublicKey("TCxYUG556eXbNRMxXMtvJyTTuHs5wxE557HgcfzYg4w");
 // --------------------
 
 const router = express.Router();
@@ -53,7 +49,6 @@ function getRelayerWallet() {
 // Endpoint 1: Create Transaction
 router.post('/create-flip', async (req, res) => {
     try {
-        // --- PERBAIKAN: Muat wallet di dalam function ---
         const relayerWallet = getRelayerWallet();
         
         const { userWallet, amount } = req.body;
@@ -72,7 +67,7 @@ router.post('/create-flip', async (req, res) => {
         });
 
         const transaction = new Transaction().add(transferInstruction);
-        transaction.feePayer = relayerWallet.publicKey; // <-- Ini akan aman sekarang
+        transaction.feePayer = relayerWallet.publicKey; 
         
         const { blockhash } = await connection.getLatestBlockhash('finalized');
         transaction.recentBlockhash = blockhash;
@@ -93,7 +88,6 @@ router.post('/create-flip', async (req, res) => {
 // Endpoint 2: Submit Transaction & Coinflip
 router.post('/submit-flip', async (req, res) => {
     try {
-        // --- PERBAIKAN: Muat wallet di dalam function ---
         const relayerWallet = getRelayerWallet();
 
         const { signedTransaction } = req.body;
@@ -104,7 +98,12 @@ router.post('/submit-flip', async (req, res) => {
 
         const transaction = Transaction.from(Buffer.from(signedTransaction, 'base64'));
         
-        // Baris 81 Anda yang error, sekarang aman
+        // --- INI DIA PERBAIKANNYA ---
+        // Kita harus set feePayer-nya lagi di sini
+        transaction.feePayer = relayerWallet.publicKey;
+        // -----------------------------
+        
+        // Baris 108 Anda yang error, sekarang aman
         transaction.sign([relayerWallet]); 
 
         console.log(`[SUBMIT] Sending transaction (bet) to network...`);
