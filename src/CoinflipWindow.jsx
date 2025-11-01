@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'; 
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Transaction } from '@solana/web3.js'; 
-
-// IMPORT ICONS
 import { FaXTwitter } from "react-icons/fa6"; 
+
+// Impor context yang kita buat
+import { useFlipContext } from './App'; 
 
 // --- NUMBER FORMATTING FUNCTION ---
 function formatMarketCap(mcap) {
@@ -17,14 +18,17 @@ function formatMarketCap(mcap) {
   return `$${num.toFixed(2)}`;
 }
 
-// --- HARDCODED PUBLIC ADDRESSES ---
-const DEXSCREENER_PAIR_ADDRESS = "82iP13cWNwA6dZ1mMvFhvyy4x34qWd5y1t3vXbN3fGqM"; // Change this
-const TOKEN_CONTRACT_ADDRESS = "YOUR_TOKEN_CONTRACT_ADDRESS_HERE"; // Change this
+// --- HARDCODED PUBLIC ADDRESSES (DEVNET) ---
+const DEXSCREENER_PAIR_ADDRESS = "82iP13cWNwA6dZ1mMvFhvyy4x34qWd5y1t3vXbN3fGqM"; // Ganti ini
+const TOKEN_CONTRACT_ADDRESS = "YOUR_TOKEN_CONTRACT_ADDRESS_HERE"; // Ganti ini
 
 // Coinflip Window Component
 function CoinflipWindow() {
   const { publicKey, connected, signTransaction } = useWallet(); 
   const { connection } = useConnection(); 
+  
+  // Ambil fungsi 'addLiveTransaction' dari context
+  const { addLiveTransaction } = useFlipContext();
 
   const [activeView, setActiveView] = useState('coinflip');
   const [marketCap, setMarketCap] = useState(null);
@@ -33,6 +37,10 @@ function CoinflipWindow() {
   const [isLoading, setIsLoading] = useState(false);
   const [resultMessage, setResultMessage] = useState('');
   const [showGlitch, setShowGlitch] = useState(false); 
+  
+  // --- STATE BARU UNTUK TX HASHES ---
+  const [betTx, setBetTx] = useState(null);
+  const [payoutTx, setPayoutTx] = useState(null);
   
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -77,7 +85,10 @@ function CoinflipWindow() {
     }
 
     setIsLoading(true);
+    // Bersihkan hasil sebelumnya
     setResultMessage(''); 
+    setBetTx(null);
+    setPayoutTx(null);
     setShowGlitch(true); 
 
     try {
@@ -118,13 +129,27 @@ function CoinflipWindow() {
       const submitData = await submitResponse.json();
       if (!submitResponse.ok) throw new Error(submitData.error || 'Failed to submit transaction');
 
-      // 5. Show result
+      // 5. Tampilkan hasil dan simpan tx hash
       console.log('Flip complete! Result:', submitData);
       setResultMessage(submitData.message);
+      setBetTx(submitData.betTx || null);
+      setPayoutTx(submitData.payoutTx || null);
+
+      // --- KIRIM DATA KE LIVE FEED ---
+      addLiveTransaction({
+        id: Date.now(),
+        wallet: publicKey.toBase58(),
+        amount: betAmount,
+        choice: choice.toUpperCase(), // 'heads' -> 'HEADS'
+        result: submitData.result // 'WON' or 'LOST'
+      });
+      // -----------------------------
       
     } catch (error) {
       console.error('Flip Failed:', error);
       setResultMessage(`ERROR: ${error.message}`);
+      setBetTx(null);
+      setPayoutTx(null);
     } finally {
       setIsLoading(false);
       setShowGlitch(false); 
@@ -221,11 +246,37 @@ function CoinflipWindow() {
                     )}
                   </button>
 
+                  {/* --- AREA HASIL BARU --- */}
                   <div
-                    className={`result-area ${isLoading ? 'flipping' : (resultMessage.includes('WON') ? 'win' : (resultMessage.includes('LOST') ? 'lose' : ''))}`}
+                    className={`result-area ${isLoading ? 'flipping' : (resultMessage.includes('WON') ? 'win' : (resultMessage.includes('LOST') || resultMessage.includes('ERROR') ? 'lose' : ''))}`}
                   >
-                    {resultMessage}
+                    {isLoading && <p>Flipping...</p>} 
+                    {!isLoading && resultMessage && <p>{resultMessage}</p>}
+                    
+                    {/* Tampilkan Link TX (hash) */}
+                    {!isLoading && betTx && (
+                      <a 
+                        href={`https://solscan.io/tx/${betTx}?cluster=devnet`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="tx-link"
+                      >
+                        View Bet Transaction
+                      </a>
+                    )}
+                    {!isLoading && payoutTx && (
+                      <a 
+                        href={`https://solscan.io/tx/${payoutTx}?cluster=devnet`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="tx-link"
+                      >
+                        View Payout Transaction
+                      </a>
+                    )}
                   </div>
+                  {/* --- AKHIR AREA HASIL BARU --- */}
+
 
                   <WalletMultiButton />
                 </>
@@ -257,7 +308,7 @@ function CoinflipWindow() {
             <p>CONTRACT ADDRESS</p> 
             <div className="ca-box">
               <a 
-                href={`https://solscan.io/address/${TOKEN_CONTRACT_ADDRESS}`} 
+                href={`https://solscan.io/address/${TOKEN_CONTRACT_ADDRESS}?cluster=devnet`} 
                 target="_blank" 
                 rel="noopener noreferrer"
               >

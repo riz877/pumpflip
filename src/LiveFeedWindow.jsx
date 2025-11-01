@@ -1,47 +1,28 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
+// Impor context
+import { useFlipContext } from './App';
 
-// --- HELPER FUNCTIONS FOR FEED SIMULATION ---
-const fakeWallets = ['3z...yM2', '8T...gA1', 'Fp...kR4', '9j...LwP', 'Gw...pU8'];
-const fakeAmounts = [0.1, 0.25, 0.5, 1.0, 2.0];
-const fakeChoices = ['HEADS', 'TAILS'];
-
-const createFakeTransaction = () => {
-  const wallet = fakeWallets[Math.floor(Math.random() * fakeWallets.length)];
-  const amount = fakeAmounts[Math.floor(Math.random() * fakeAmounts.length)];
-  const choice = fakeChoices[Math.floor(Math.random() * fakeChoices.length)];
-  const result = Math.random() < 0.5 ? 'WON' : 'LOST';
-  return { id: Date.now(), wallet, amount, choice, result };
+// --- FUNGSI HELPER BARU UNTUK MEMOTONG ALAMAT WALLET ---
+const shortenWallet = (wallet) => {
+  if (!wallet) return '';
+  return `${wallet.substring(0, 4)}...${wallet.substring(wallet.length - 4)}`;
 };
+
 
 // Live Feed Window Component
 function LiveFeedWindow() {
-  const [liveTransactions, setLiveTransactions] = useState([]);
+  // Ambil data transaksi langsung dari context
+  const { liveTransactions } = useFlipContext();
   const feedContentRef = useRef(null); // Ref for auto-scroll
 
-  // Effect for simulating the feed
-  useEffect(() => {
-    // Create some initial fake transactions
-    const initialTxs = [createFakeTransaction(), createFakeTransaction(), createFakeTransaction()];
-    setLiveTransactions(initialTxs);
-
-    // Set interval to add new fake transactions
-    const feedInterval = setInterval(() => {
-      const newTx = createFakeTransaction();
-      
-      // Add new tx to the top, limit to 100 entries (for scrolling)
-      setLiveTransactions(prev => [newTx, ...prev].slice(0, 100)); 
-
-    }, 3000 + Math.random() * 2000); // Random interval between 3-5 seconds
-
-    return () => clearInterval(feedInterval); // Clean up on unmount
-  }, []);
+  // Hapus semua data palsu dan interval
 
   // Effect to auto-scroll to the top (newest entry)
   useEffect(() => {
     if (feedContentRef.current) {
       feedContentRef.current.scrollTop = 0; // Always scroll to top
     }
-  }, [liveTransactions]);
+  }, [liveTransactions]); // Update saat transaksi baru masuk
 
   return (
     <div className="live-feed-window">
@@ -64,10 +45,10 @@ function LiveFeedWindow() {
         </div>
         <br /> 
 
-        {/* Transaction list */}
+        {/* Transaction list (sekarang menggunakan data asli) */}
         {liveTransactions.map(tx => (
           <div key={tx.id} className="feed-line">
-            <span className="wallet">{tx.wallet}</span>
+            <span className="wallet">{shortenWallet(tx.wallet)}</span>
             <span className="action"> flipped </span>
             <span className="amount">{tx.amount} SOL</span>
             <span className="action"> on </span>

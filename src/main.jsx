@@ -21,7 +21,7 @@ import '@solana/wallet-adapter-react-ui/styles.css';
 
 // Komponen pembungkus untuk mengatur provider
 const SolanaAppWrapper = () => {
-    // Ganti ke 'mainnet-beta' saat Anda live
+    // Tetap di Devnet
     const network = WalletAdapterNetwork.Devnet; 
     const endpoint = useMemo(() => clusterApiUrl(network), [network]);
 

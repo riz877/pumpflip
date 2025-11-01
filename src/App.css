@@ -402,3 +402,32 @@
     height: 400px; 
   }
 }
+
+.result-area {
+  margin-top: 25px;
+  min-height: 80px; /* Perbesar sedikit untuk link */
+  font-family: 'Press Start 2P', cursive;
+  font-size: 20px; /* Perkecil sedikit font hasil */
+  padding-bottom: 10px; 
+}
+.result-area.win { color: #00FF00; text-shadow: 0 0 8px #00FF00; }
+.result-area.lose { color: #FF0000; text-shadow: 0 0 8px #FF0000; }
+.result-area.flipping { color: #FFFF00; text-shadow: 0 0 8px #FFFF00; }
+
+.result-area p {
+  margin-bottom: 10px;
+}
+
+.result-area .tx-link {
+  display: block;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  color: #00FF00;
+  text-decoration: underline;
+  margin-top: 10px;
+  word-wrap: break-word; 
+  word-break: break-all;
+}
+.result-area .tx-link:hover {
+  color: #FFFF00; /* Kuning saat hover */
+}
