@@ -129,3 +129,4 @@ app.use('/api', router); // For production (from redirect)
 
 // Wrap the app for Netlify
 module.exports.handler = serverless(app);
+// <-- Saya sudah hapus '}' yang ekstra dari sini
